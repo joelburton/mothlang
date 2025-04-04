@@ -21,7 +21,7 @@ class Parser(private val tokens: List<Token>) {
     // precedence order of tokens: low->high
 
     private fun statement(): Stmt {
-        if (match(PRINT)) return printStatement();
+        if (match(PRINT)) return printStatement()
         else return expressionStatement()
     }
 
