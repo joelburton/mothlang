@@ -1,4 +1,12 @@
 build/
-.idea/
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
 .gradle/
-.kotlin
+.kotlin/
+.vscode/
+.DS_Store
