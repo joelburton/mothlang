@@ -24,9 +24,9 @@ class Lox() {
 
     fun run(code: String) {
         val parser = Parser(Scanner(code).scanTokens())
-        val expression = parser.parse()
+        val statements = parser.parse()
         if (hadError) return
-        interpreter.interpret(expression)
+        interpreter.interpret(statements)
     }
 
     companion object {

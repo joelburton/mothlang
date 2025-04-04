@@ -1,9 +1,19 @@
 import TokenType.*
 
-class Interpreter : Expr.Visitor<Any?> {
+class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
     class RuntimeError(val token: Token, message: String) : RuntimeException(message)
 
+    override fun visitExpression(expr: Stmt.Expression) {
+        evaluate(expr.expression)
+    }
+
+    override fun visitPrint(expr: Stmt.Print) {
+        val value = evaluate(expr.expression)
+        println(stringify(value))
+    }
+
     override fun visitLiteralExpr(expr: Expr.Literal): Any? = expr.value
+
     override fun visitGroupingExpr(expr: Expr.Grouping): Any? =
         evaluate(expr.expression)
 
@@ -67,7 +77,9 @@ class Interpreter : Expr.Visitor<Any?> {
         else -> true
     }
 
-    private fun isEqual(a: Any?, b: Any?) = if (a == null) b == null else a == b
+    private fun isEqual(a: Any?, b: Any?) =
+        if (a == null) b == null else a == b
+
     private fun stringify(obj: Any?) =
         when (obj) {
             null -> "nil"
@@ -76,11 +88,11 @@ class Interpreter : Expr.Visitor<Any?> {
         }
 
     private fun evaluate(expr: Expr?): Any? = expr?.accept(this)
+    private fun execute(stmt: Stmt) = stmt.accept(this)
 
-    fun interpret(expr: Expr?) {
+    fun interpret(statements: List<Stmt>) {
         try {
-            val value = evaluate(expr)
-            println(stringify(value))
+            for (statement in statements) execute(statement)
         } catch (err: RuntimeError) {
             Lox.runtimeError(err)
         }

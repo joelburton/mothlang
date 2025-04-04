@@ -20,6 +20,23 @@ class Parser(private val tokens: List<Token>) {
 
     // precedence order of tokens: low->high
 
+    private fun statement(): Stmt {
+        if (match(PRINT)) return printStatement();
+        else return expressionStatement()
+    }
+
+    private fun printStatement(): Stmt {
+        val value = expression()
+        consume(SEMICOLON, "Expect ';' after value.")
+        return Stmt.Print(value)
+    }
+
+    private fun expressionStatement(): Stmt {
+        val expr = expression()
+        consume(SEMICOLON, "Expect ';' after expression.")
+        return Stmt.Expression(expr)
+    }
+
     private fun expression(): Expr = equality()
 
     private fun equality(): Expr {
@@ -86,7 +103,7 @@ class Parser(private val tokens: List<Token>) {
                 Expr.Grouping(expr)
             }
 
-            else -> throw Exception("Unexpected token: ${currTok}")
+            else -> throw ParseError("Unexpected token: ${currTok}")
         }
 
     @Suppress("SameParameterValue")
@@ -97,10 +114,10 @@ class Parser(private val tokens: List<Token>) {
 
     private fun error(token: Token, message: String): ParseError {
         loxError(token, message)
-        return ParseError()
+        return ParseError(message)
     }
 
-    private class ParseError : RuntimeException()
+    private class ParseError(msg :String) : RuntimeException(msg)
 
     @Suppress("unused")
     private fun synchronize() {
@@ -112,11 +129,9 @@ class Parser(private val tokens: List<Token>) {
         }
     }
 
-    fun parse(): Expr? {
-        return try {
-            expression()
-        } catch (_: ParseError) {
-            null
-        }
+    fun parse(): List<Stmt> {
+        val statements = mutableListOf<Stmt>()
+        while (!isAtEnd) statements.add(statement())
+        return statements
     }
 }
