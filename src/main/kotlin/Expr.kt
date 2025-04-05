@@ -50,7 +50,7 @@ abstract class Expr {
     class Logical(
         val left: Expr,
         val operator: Token,
-        val right: Expr?,
+        val right: Expr,
     ) : Expr() {
         override fun <R> accept(v: Visitor<R>): R = v.visitLogicalExpr(this)
     }

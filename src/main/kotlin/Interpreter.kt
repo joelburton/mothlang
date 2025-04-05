@@ -7,6 +7,7 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
     class Return(val value: Any?) : RuntimeException(null, null, false, false)
 
     var globals = Environment()
+    var locals = HashMap<Expr, Int>()
     private var environment = globals
 
     init {
@@ -19,7 +20,7 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
     }
 
     override fun visitVariableExpr(expr: Expr.Variable): Any? =
-        environment[expr.name]
+        lookUpVar(expr.name, expr)
 
     override fun visitBlockStmt(stmt: Stmt.Block) {
         executeBlock(stmt.statements, Environment(environment))
@@ -31,7 +32,11 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
 
     override fun visitAssignExpr(expr: Expr.Assign): Any? {
         val value = evaluate(expr.value)
-        environment.assign(expr.name, value)
+
+        val dist = locals[expr]
+        if (dist != null) environment.assignAt(dist, expr.name, value)
+        else environment.assign(expr.name, value)
+
         return value
     }
 
@@ -183,5 +188,17 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         } catch (err: RuntimeError) {
             Lox.runtimeError(err)
         }
+    }
+
+    fun resolve(expr: Expr, depth: Int) {
+        locals.put(expr, depth)
+    }
+
+    private fun lookUpVar(name: Token, expr: Expr): Any? {
+        val distance = locals[expr]
+        return if (distance != null)
+            environment.getAt(distance, name.lexeme)
+        else
+            globals[name]
     }
 }
