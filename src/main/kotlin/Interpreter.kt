@@ -1,14 +1,42 @@
 import TokenType.*
 
 class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
-    class RuntimeError(val token: Token, message: String) : RuntimeException(message)
+    open class RuntimeError(val token: Token, message: String) :
+        RuntimeException(message)
 
-    override fun visitExpression(expr: Stmt.Expression) {
+    class Return(val value: Any?) : RuntimeException(null, null, false, false)
+
+    var globals = Environment()
+    private var environment = globals
+
+    init {
+        globals["clock"] = ClockFn
+    }
+
+    override fun visitVarStmt(stmt: Stmt.Var) {
+        val value = stmt.initializer?.let { evaluate(it) }
+        environment[stmt.name.lexeme] = value
+    }
+
+    override fun visitVariableExpr(expr: Expr.Variable): Any? =
+        environment[expr.name]
+
+    override fun visitBlockStmt(stmt: Stmt.Block) {
+        executeBlock(stmt.statements, Environment(environment))
+    }
+
+    override fun visitExpressionStmt(expr: Stmt.Expression) {
         evaluate(expr.expression)
     }
 
-    override fun visitPrint(expr: Stmt.Print) {
-        val value = evaluate(expr.expression)
+    override fun visitAssignExpr(expr: Expr.Assign): Any? {
+        val value = evaluate(expr.value)
+        environment.assign(expr.name, value)
+        return value
+    }
+
+    override fun visitPrintStmt(stmt: Stmt.Print) {
+        val value = evaluate(stmt.expression)
         println(stringify(value))
     }
 
@@ -25,6 +53,22 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
             BANG -> !isTruthy(right)
             else -> null
         }
+    }
+
+    override fun visitWhileStmt(stmt: Stmt.While) {
+        while (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.body)
+        }
+    }
+
+    override fun visitLogicalExpr(expr: Expr.Logical): Any? {
+        val left = evaluate(expr.left)
+        if (expr.operator.type == OR) {
+            if (isTruthy(left)) return left
+        } else {
+            if (!isTruthy(left)) return left
+        }
+        return evaluate(expr.right)
     }
 
     override fun visitBinaryExpr(expr: Expr.Binary): Any? {
@@ -44,7 +88,7 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
                 )
             }
         }
-
+        
         // else: must be nums
         checkNumberOperands(expr.operator, left, right)
         return when (expr.operator.type) {
@@ -59,6 +103,36 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
             BANG_EQUAL -> !isEqual(left, right)
             else -> throw RuntimeError(expr.operator, "Invalid operator.")
         }
+    }
+
+    override fun visitFunctionStmt(stmt: Stmt.Function) {
+        val fn = LoxFunction(stmt, environment)
+        environment[stmt.name.lexeme] = fn
+        println("Added function to environment: ${stmt.name.lexeme}")
+    }
+
+    override fun visitCallExpr(expr: Expr.Call): Any? {
+        val callee = evaluate(expr.callee)
+        val arguments = expr.arguments.map { evaluate(it) }.toMutableList()
+        if (callee !is ILoxCallable)
+            throw RuntimeError(
+                expr.paren, "Can only call functions and classes.")
+        if (arguments.size != callee.arity)
+            throw RuntimeError(
+                expr.paren,
+                "Expected ${callee.arity} arguments but got ${arguments.size}."
+            )
+        return callee.call(this, arguments)
+    }
+
+    override fun visitIfStmt(stmt: Stmt.If) {
+        if (isTruthy(evaluate(stmt.condition))) execute(stmt.thenBranch)
+        else execute(stmt.elseBranch)
+    }
+
+    override fun visitReturnStmt(stmt: Stmt.Return) {
+        val value = stmt.value?.let { evaluate(it) }
+        throw Return(value)
     }
 
     private fun checkNumberOperand(operator: Token, operand: Any?) {
@@ -88,9 +162,22 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         }
 
     private fun evaluate(expr: Expr?): Any? = expr?.accept(this)
-    private fun execute(stmt: Stmt) = stmt.accept(this)
+    private fun execute(stmt: Stmt?) = stmt?.accept(this)
 
-    fun interpret(statements: List<Stmt>) {
+    internal fun executeBlock(
+        statements: List<Stmt?>,
+        environment: Environment,
+    ) {
+        var previous = this.environment
+        try {
+            this.environment = environment
+            for (statement in statements) statement?.accept(this)
+        } finally {
+            this.environment = previous
+        }
+    }
+
+    fun interpret(statements: List<Stmt?>) {
         try {
             for (statement in statements) execute(statement)
         } catch (err: RuntimeError) {
