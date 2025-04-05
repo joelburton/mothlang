@@ -224,7 +224,7 @@ class Parser(private val tokens: List<Token>) {
         var expr = primary()
         while (true) {
             if (match(LEFT_PAREN)) expr = finishCall(expr)
-            else break;
+            else break
         }
         return expr
     }

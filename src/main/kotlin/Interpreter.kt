@@ -6,8 +6,8 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
 
     class Return(val value: Any?) : RuntimeException(null, null, false, false)
 
-    var globals = Environment()
-    var locals = HashMap<Expr, Int>()
+    private var globals = Environment()
+    private var locals = HashMap<Expr, Int>()
     private var environment = globals
 
     init {
@@ -190,7 +190,7 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         }
     }
 
-    fun resolve(expr: Expr, depth: Int) {
+    internal fun resolve(expr: Expr, depth: Int) {
         locals.put(expr, depth)
     }
 

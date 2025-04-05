@@ -29,9 +29,7 @@ class Environment(val enclosing: Environment? = null) {
 
     private fun ancestor(distance: Int): Environment? {
         var environment: Environment? = this
-        for (i in 0 until distance) {
-            environment = environment?.enclosing
-        }
+        for (i in 0 until distance) environment = environment?.enclosing
         return environment
     }
 }

@@ -1,8 +1,4 @@
-fun main(args: Array<String>) {
-    val lox = Lox()
-
-    if (args.isEmpty())
-        lox.runPrompt()
-    else
-        lox.runFile(args[0])
-}
+fun main(args: Array<String>) =
+    Lox().run {
+        if (args.isEmpty()) runPrompt() else runFile(args[0])
+    }

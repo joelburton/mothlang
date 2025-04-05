@@ -3,45 +3,25 @@ import java.util.Stack
 class Resolver(
     val interp: Interpreter,
 ) : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
+    
     private enum class FunctionType { NONE, FUNCTION }
 
-    val scopes: Stack<MutableMap<String, Boolean>> = Stack()
+    private val scopes: Stack<MutableMap<String, Boolean>> = Stack()
     private var currentFunction = FunctionType.NONE
 
     fun resolve(statements: List<Stmt?>) {
         for (statement in statements) statement?.accept(this)
     }
 
-    fun resolve(expr: Expr) {
+    private fun resolve(expr: Expr) {
         expr.accept(this)
     }
 
-    fun resolve(stmt: Stmt) {
+    private fun resolve(stmt: Stmt) {
         stmt.accept(this)
     }
 
-    fun beginScope() {
-        scopes.push(mutableMapOf())
-    }
-
-    fun endScope() {
-        scopes.pop()
-    }
-
-    fun declare(name: Token) {
-        if (scopes.empty()) return
-        val scope = scopes.peek()
-        if (name.lexeme in scope)
-            Lox.loxError(name, "Already declared in this scope.")
-        scope[name.lexeme] = false
-    }
-
-    fun define(name: Token) {
-        if (scopes.empty()) return
-        scopes.peek()[name.lexeme] = true
-    }
-
-    fun resolveLocal(expr: Expr, name: Token) {
+    private fun resolveLocal(expr: Expr, name: Token) {
         for (i in scopes.indices.reversed()) {
             if (name.lexeme in scopes[i]) {
                 interp.resolve(expr, scopes.size - 1 - i)
@@ -64,6 +44,30 @@ class Resolver(
 
         currentFunction = enclosingFunction
     }
+
+    private fun beginScope() {
+        scopes.push(mutableMapOf())
+    }
+
+    private fun endScope() {
+        scopes.pop()
+    }
+
+    private fun declare(name: Token) {
+        if (scopes.empty()) return
+        val scope = scopes.peek()
+        if (name.lexeme in scope)
+            Lox.loxError(name, "Already declared in this scope.")
+        scope[name.lexeme] = false
+    }
+
+    private fun define(name: Token) {
+        if (scopes.empty()) return
+        scopes.peek()[name.lexeme] = true
+    }
+
+
+    // expression visitors
 
     override fun visitAssignExpr(expr: Expr.Assign) {
         resolve(expr.value)
@@ -106,6 +110,8 @@ class Resolver(
         resolveLocal(expr, expr.name)
     }
 
+    // statement visitors
+
     override fun visitExpressionStmt(expr: Stmt.Expression) {
         resolve(expr.expression)
     }
@@ -121,9 +127,9 @@ class Resolver(
     }
 
     override fun visitBlockStmt(stmt: Stmt.Block) {
-        beginScope();
-        resolve(stmt.statements);
-        endScope();
+        beginScope()
+        resolve(stmt.statements)
+        endScope()
     }
 
     override fun visitIfStmt(stmt: Stmt.If) {

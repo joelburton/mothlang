@@ -83,7 +83,7 @@ class Scanner(private val source: String) {
         addToken(type)
     }
 
-    fun scanToken() {
+    private fun scanToken() {
         val c = advance()
         when (c) {
             '(' -> addToken(LEFT_PAREN)

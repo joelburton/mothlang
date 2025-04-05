@@ -6,4 +6,3 @@ class Token(
 ) {
     override fun toString() = "$type $lexeme $literal"
 }
-
