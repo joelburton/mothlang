@@ -30,7 +30,7 @@ open class AstExprPrinter : Expr.Visitor<String> {
     override fun visitCallExpr(expr: Expr.Call): String {
         val callee = expr.callee.accept(this)
         val args = expr.arguments
-            .joinToString(", ") { it?.accept(this) ?: "nil" }
+            .joinToString(", ") { it.accept(this) }
         return "($callee (${args}))"
     }
 

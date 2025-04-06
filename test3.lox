@@ -1,0 +1,14 @@
+
+
+
+fun foo() {
+
+
+  7 > "a";
+
+   print randomNum(10, 0);
+
+
+}
+
+foo();

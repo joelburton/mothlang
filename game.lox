@@ -1,0 +1,24 @@
+var secretNum = randomNum(1,100);
+var guess = -1;
+
+print "I guessed a number. Can you guess it?";
+
+fun game() {
+    while (secretNum != guess) {
+        guess = stringToNum(input("? "));
+
+        if (guess == secretNum) {
+            print "you win!";
+            return;
+        }
+
+        if (guess < secretNum) {
+            print "too low, numskull!";
+        } else {                
+            print "whoa there, buddy --- too high!";
+        }
+    }
+}
+
+game();
+
