@@ -3,7 +3,7 @@ package com.joelburton.mothlang.scanner
 import com.joelburton.mothlang.Lox
 import com.joelburton.mothlang.scanner.TokenType.*
 
-/** Maps language keywords to [scanner.TokenType]. */
+/** Maps language keywords to [TokenType]. */
 
 private val keywordsToTokens = mapOf(
     "and" to AND,
@@ -52,7 +52,7 @@ class Scanner(private val source: String) {
 
     /** Char position in the [source].
      *
-     * This is "one-ahead" of the char this responds to; see how "advance"
+     * This is "one-ahead" of the char this is responding to; see how "advance"
      * returns the current pointer position and then advances to the next.
      * */
     private var current = 0
@@ -76,7 +76,7 @@ class Scanner(private val source: String) {
     /** Add token to [tokens].
      *
      * @param type scanner.TokenType
-     * @param literal Any? TODO
+     * @param literal Any? literal value of number/string tokens
      */
     private fun addToken(type: TokenType, literal: Any? = null) {
         val text = source.slice(start until current)
@@ -87,12 +87,12 @@ class Scanner(private val source: String) {
     private fun match(expected: Char): Boolean =
         if (isAtEnd || source[current] != expected) false
         else {
-            val c: Char = 'x'
+            val c = 'x'
             c.isDigit()
             current += 1; true
         }
 
-    /** Is this a simple digit? (just 0-9, no fancy unicode stuff. */
+    /** Is this a simple digit? (just 0-9, no fancy Unicode stuff). */
     private fun isDigit(c: Char) = c in '0'..'9'
 
     /** Is this a valid identifier start? (A-Z,a-z,_) */
@@ -119,7 +119,7 @@ class Scanner(private val source: String) {
 
         advance() // skip the ending quote
         val value = source.slice(start + 1 until current - 1)
-        addToken(TokenType.STRING, value)
+        addToken(STRING, value)
     }
 
     /** Consume simple-float and add as [Token].
@@ -136,7 +136,7 @@ class Scanner(private val source: String) {
             advance()
             while (peek().isDigit()) advance()
         }
-        addToken(TokenType.NUMBER, source.slice(start until current).toDouble())
+        addToken(NUMBER, source.slice(start until current).toDouble())
     }
 
     /** Consume identifier and add [Token] (keyword or generic IDENTIFIER). */
@@ -145,13 +145,13 @@ class Scanner(private val source: String) {
         while (isIdent(peek())) advance()
 
         val text = source.slice(start until current)
-        val type = keywordsToTokens[text] ?: TokenType.IDENTIFIER
+        val type = keywordsToTokens[text] ?: IDENTIFIER
         addToken(type)
     }
 
     /** Scan current char and add token.
      *
-     * - Many are simple one-char: `+` `-` `*` etc
+     * - Many are simple one-char: `+` `-` `*` etc.
      * - `/` can be SLASH or start of `//` comment
      *   - comments don't generate a token and are ignored
      * - whitespace is ignored (newlines add to line counter)
@@ -162,23 +162,23 @@ class Scanner(private val source: String) {
     private fun scanToken() {
         val c = advance()
         when (c) {
-            '(' -> addToken(TokenType.LEFT_PAREN)
-            ')' -> addToken(TokenType.RIGHT_PAREN)
-            '{' -> addToken(TokenType.LEFT_BRACE)
-            '}' -> addToken(TokenType.RIGHT_BRACE)
-            ',' -> addToken(TokenType.COMMA)
-            '.' -> addToken(TokenType.DOT)
-            '-' -> addToken(TokenType.MINUS)
-            '+' -> addToken(TokenType.PLUS)
-            ';' -> addToken(TokenType.SEMICOLON)
-            '*' -> addToken(TokenType.STAR)
-            '!' -> addToken(if (match('=')) TokenType.BANG_EQUAL else TokenType.BANG)
-            '=' -> addToken(if (match('=')) TokenType.EQUAL_EQUAL else TokenType.EQUAL)
-            '<' -> addToken(if (match('=')) TokenType.LESS_EQUAL else TokenType.LESS)
-            '>' -> addToken(if (match('=')) TokenType.GREATER_EQUAL else TokenType.GREATER)
+            '(' -> addToken(LEFT_PAREN)
+            ')' -> addToken(RIGHT_PAREN)
+            '{' -> addToken(LEFT_BRACE)
+            '}' -> addToken(RIGHT_BRACE)
+            ',' -> addToken(COMMA)
+            '.' -> addToken(DOT)
+            '-' -> addToken(MINUS)
+            '+' -> addToken(PLUS)
+            ';' -> addToken(SEMICOLON)
+            '*' -> addToken(STAR)
+            '!' -> addToken(if (match('=')) BANG_EQUAL else BANG)
+            '=' -> addToken(if (match('=')) EQUAL_EQUAL else EQUAL)
+            '<' -> addToken(if (match('=')) LESS_EQUAL else LESS)
+            '>' -> addToken(if (match('=')) GREATER_EQUAL else GREATER)
             '/' -> {
                 if (match('/')) while (peek() != '\n' && !isAtEnd) advance()
-                else addToken(TokenType.SLASH)
+                else addToken(SLASH)
             }
 
             '"' -> handleString()
@@ -200,7 +200,7 @@ class Scanner(private val source: String) {
             scanToken()
         }
 
-        tokens.add(Token(type = TokenType.EOF, lexeme = "", literal = null, line = line))
+        tokens.add(Token(type = EOF, lexeme = "", literal = null, line = line))
         return tokens
     }
 }

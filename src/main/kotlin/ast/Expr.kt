@@ -1,4 +1,4 @@
-package com.joelburton.mothlang.parser
+package com.joelburton.mothlang.ast
 
 import com.joelburton.mothlang.scanner.Token
 
@@ -8,13 +8,15 @@ import com.joelburton.mothlang.scanner.Token
  * An expression is "anything that could be on the right-hand side of an
  * assignment", basically, like "1", "1 + foo", "myFunc(10, 20)", etc.
  *
- * Since the [Parser] tokens will be used in different ways (just printing
- * them to debug them, interpreting them, resolving variables in them, etc),
+ * Since the [com.joelburton.mothlang.parser.Parser] tokens will be used in different ways (just printing
+ * them to debug them, interpreting them, resolving variables in them, etc.),
  * they might accumulate a method for each of these, so each token class
  * would handle each of those actions. Instead, this code is oriented around
  * the [Visitor pattern](https://en.wikipedia.org/wiki/Visitor_pattern), which
- * "re-orients" the object-orientation so that one class (the [interpreter.Interpreter]
- * or [resolver.Resolver] can gather together all the logic about that system in one
+ * "re-orients" the object-orientation so that one class --- the
+ * [com.joelburton.mothlang.interpreter.Interpreter]
+ * or [com.joelburton.mothlang.resolver.Resolver] can gather together all the
+ * logic about that system in one
  * class, leaving the parser.Parser classes simpler and focused only on their data.
  * This also means they won't need to be touched if other layers of
  * post-parsing are added.
@@ -70,7 +72,7 @@ sealed class Expr {
     class Call(
         val callee: Expr,
         val paren: Token,
-        val arguments: MutableList<Expr?>,
+        val arguments: MutableList<Expr>,
     ) : Expr() {
         override fun <R> accept(v: Visitor<R>): R = v.visitCallExpr(this)
     }

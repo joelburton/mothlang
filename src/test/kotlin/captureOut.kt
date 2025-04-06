@@ -1,6 +1,7 @@
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
+@Suppress("unused")
 fun captureStdout(block: () -> Unit): String {
     val byteArrayOutputStream = ByteArrayOutputStream()
     val printStream = PrintStream(byteArrayOutputStream)

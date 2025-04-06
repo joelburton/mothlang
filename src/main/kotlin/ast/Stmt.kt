@@ -1,4 +1,4 @@
-package com.joelburton.mothlang.parser
+package com.joelburton.mothlang.ast
 
 import com.joelburton.mothlang.scanner.Token
 

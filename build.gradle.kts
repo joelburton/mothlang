@@ -9,6 +9,7 @@ kotlin { jvmToolchain(21) }
 repositories { mavenCentral() }
 dependencies {
     testImplementation(kotlin("test"))
+    implementation("com.github.ajalt.clikt:clikt:5.0.3")
 }
 
 group = "com.joelburton.mothlang"
@@ -17,7 +18,7 @@ version = "1.0"
 
 tasks.test { useJUnitPlatform() }
 tasks.jar {
-    manifest { attributes["Main-Class"] = "MainKt" }
+    manifest { attributes["Main-Class"] = "com.joelburton.mothlang.cli.MainKt" }
 }
 dokka {
     dokkaSourceSets.main {

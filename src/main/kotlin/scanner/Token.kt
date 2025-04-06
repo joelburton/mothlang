@@ -4,7 +4,7 @@ package com.joelburton.mothlang.scanner
  *
  * @property type scanner.TokenType that represents what kind of token this is.
  * @property lexeme String that is the actual text of a token.
- * @property literal TODO
+ * @property literal Any? literal value (Double, Boolean, String, null)
  * @property line What line of input this token was found on (1-based)
  */
 
