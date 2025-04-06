@@ -1,6 +1,8 @@
 import TokenType.*
 
-private val keywords = mapOf(
+/** Maps language keywords to [TokenType]. */
+
+private val keywordsToTokens = mapOf(
     "and" to AND,
     "class" to CLASS,
     "else" to ELSE,
@@ -19,40 +21,89 @@ private val keywords = mapOf(
     "while" to WHILE,
 )
 
+/** Scanner that takes string [source] and gathers found tokens in [tokens].
+ *
+ * The general use is:
+ *
+ * ```
+ *   val scanner = Scanner(myText)
+ *   val tokens: List<Token> = scanner.scanTokens()
+ * ```
+ *
+ * If the scanning is interrupted by an unhandled error, you can resume where
+ * it left off, since it internally tracks the current pointer in the source.
+ * */
+
 class Scanner(private val source: String) {
+    /** List of tokens found by the scanner. */
     private val tokens: MutableList<Token> = mutableListOf()
+
+    /** Start in [source] of current scan.
+     *
+     * For example, while scanning "123" and having found the first 2 digits:
+     *                        start-^ ^-current
+     */
     private var start = 0
+
+    /** Char position in the [source].
+     *
+     * This is "one-ahead" of the char this responds to; see how "advance"
+     * returns the current pointer position and then advances to the next.
+     * */
     private var current = 0
+
+    /** Line number of file currently being read. */
     private var line = 1
 
+    /** Are we and end of source? */
     private val isAtEnd get() = current >= source.length
 
+    /** Return current token and advance to next. */
     private fun advance() = source[current++]
 
+    /** Return current token but don't advance to next. */
+    private fun peek() = if (isAtEnd) '\u0000' else source[current]
+
+    /** Return token after the current token, but don't advance. */
+    private fun peekNext() =
+        if (current + 1 >= source.length) '\u0000' else source[current + 1]
+
+    /** Add token to [tokens].
+     *
+     * @param type TokenType
+     * @param literal Any? TODO
+     */
     private fun addToken(type: TokenType, literal: Any? = null) {
         val text = source.slice(start until current)
         tokens.add(Token(type, text, literal, line))
     }
 
-    private fun match(expected: Char): Boolean {
-        if (isAtEnd) return false
-        if (source[current] != expected) return false
-        current += 1
-        return true
-    }
+    /** Does the val of current equal [expected]? If true, advance [current]. */
+    private fun match(expected: Char): Boolean =
+        if (isAtEnd || source[current] != expected) false
+        else {
+            val c: Char = 'x'
+            c.isDigit()
+            current += 1; true
+        }
 
-    private fun peek() = if (isAtEnd) '\u0000' else source[current]
-
-    private fun peekNext() =
-        if (current + 1 >= source.length) '\u0000' else source[current + 1]
-
+    /** Is this a simple digit? (just 0-9, no fancy unicode stuff. */
     private fun isDigit(c: Char) = c in '0'..'9'
 
-    private fun isAlpha(c: Char) =
+    /** Is this a valid identifier start? (A-Z,a-z,_) */
+    private fun isIdentStart(c: Char) =
         c in 'a'..'z' || c in 'A'..'Z' || c == '_'
 
-    private fun isAlphaNumeric(c: Char) = isAlpha(c) || isDigit(c)
+    /** Is this a valid identifier-after-start? A-Z,a-z,_,0-9 */
+    private fun isIdent(c: Char) = isIdentStart(c) || isDigit(c)
 
+
+    /** Consume double-quote-delimited string to [Token].
+     *
+     * This has no escaping; it is not possible to put " inside a string.
+     *
+     * Advance line counter is newline found and continue gathering.
+     */
     private fun handleString() {
         while (peek() != '"' && !isAtEnd) {
             if (peek() == '\n') line += 1
@@ -61,11 +112,19 @@ class Scanner(private val source: String) {
 
         if (isAtEnd) return error("Unterminated string")
 
-        advance()
+        advance() // skip the ending quote
         val value = source.slice(start + 1 until current - 1)
         addToken(STRING, value)
     }
 
+    /** Consume simple-float and add as [Token].
+     *
+     * This does not allow for negative floats or stuff like scientific
+     * notation.
+     *
+     * - Allowed: 1 42 42.50
+     * - Not allowed: -1 42. 42.50.50 42e9
+     */
     private fun handleNumber() {
         while (peek().isDigit()) advance()
         if (peek() == '.' && peekNext().isDigit()) {
@@ -75,14 +134,26 @@ class Scanner(private val source: String) {
         addToken(NUMBER, source.slice(start until current).toDouble())
     }
 
-    private fun handleIdentifier() {
-        while (isAlphaNumeric(peek())) advance()
+    /** Consume identifier and add [Token] (keyword or generic IDENTIFIER). */
+
+    private fun handleIdent() {
+        while (isIdent(peek())) advance()
 
         val text = source.slice(start until current)
-        val type = keywords[text] ?: IDENTIFIER
+        val type = keywordsToTokens[text] ?: IDENTIFIER
         addToken(type)
     }
 
+    /** Scan current char and add token.
+     *
+     * - Many are simple one-char: `+` `-` `*` etc
+     * - `/` can be SLASH or start of `//` comment
+     *   - comments don't generate a token and are ignored
+     * - whitespace is ignored (newlines add to line counter)
+     * - well-formed numbers create a token
+     * - well-formed identifiers create a token
+     * - everything else reports an error
+     */
     private fun scanToken() {
         val c = advance()
         when (c) {
@@ -104,25 +175,27 @@ class Scanner(private val source: String) {
                 if (match('/')) while (peek() != '\n' && !isAtEnd) advance()
                 else addToken(SLASH)
             }
+
             '"' -> handleString()
             ' ', '\r', '\t' -> {}
             '\n' -> line += 1
 
             else -> {
                 if (isDigit(c)) handleNumber()
-                else if (isAlpha(c)) handleIdentifier()
+                else if (isIdentStart(c)) handleIdent()
                 else Lox.loxError(line, "Unexpected character: $c")
             }
         }
     }
 
-    fun scanTokens(): MutableList<Token> {
+    /** Scan tokens, start at [current] until end of file. */
+    fun scanTokens(): List<Token> {
         while (!isAtEnd) {
             start = current
             scanToken()
         }
 
-        tokens.add(Token(EOF, "", null, line))
+        tokens.add(Token(type = EOF, lexeme = "", literal = null, line = line))
         return tokens
     }
 }

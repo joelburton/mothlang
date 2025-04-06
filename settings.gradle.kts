@@ -3,3 +3,5 @@
  */
 
 rootProject.name = "build-your-own-interpreter"
+include("src:tests")
+findProject(":src:tests")?.name = "tests"
