@@ -18,7 +18,6 @@ class Environment(val enclosing: Environment? = null) {
     /** Return ancestor environment [distance] up (0 is current environ) */
     private fun ancestor(distance: Int): Environment? {
         var environment: Environment? = this
-        @Suppress("unused")
         for (i in 0 until distance) environment = environment?.enclosing
         return environment
     }

@@ -151,18 +151,17 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         val right = evaluate(expr.right)
 
         // special case: PLUS is both adding nums and strings
-        if (expr.operator.type == PLUS) {
-            if (left is Double && right is Double) {
-                return left + right
+        if (expr.operator.type == PLUS)
+            return if (left is Double && right is Double) {
+                left + right
             } else if (left is String && right is String) {
-                return left + right
+                left + right
             } else {
                 throw RuntimeError(
                     expr.operator,
                     "Operands must be two numbers or two strings."
                 )
             }
-        }
 
         // can work on heterogeneous types
         when (expr.operator.type) {
