@@ -1,3 +1,5 @@
+package com.joelburton.mothlang.scanner
+
 /** Types of tokens emitted by the [Scanner]. */
 
 enum class TokenType {

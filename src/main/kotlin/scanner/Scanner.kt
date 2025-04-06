@@ -1,6 +1,9 @@
-import TokenType.*
+package com.joelburton.mothlang.scanner
 
-/** Maps language keywords to [TokenType]. */
+import com.joelburton.mothlang.Lox
+import com.joelburton.mothlang.scanner.TokenType.*
+
+/** Maps language keywords to [scanner.TokenType]. */
 
 private val keywordsToTokens = mapOf(
     "and" to AND,
@@ -21,13 +24,15 @@ private val keywordsToTokens = mapOf(
     "while" to WHILE,
 )
 
+
+
 /** Scanner that takes string [source] and gathers found tokens in [tokens].
  *
  * The general use is:
  *
  * ```
  *   val scanner = Scanner(myText)
- *   val tokens: List<Token> = scanner.scanTokens()
+ *   val tokens: List<com.joelburton.mothlang.scanner.Token> = scanner.scanTokens()
  * ```
  *
  * If the scanning is interrupted by an unhandled error, you can resume where
@@ -70,7 +75,7 @@ class Scanner(private val source: String) {
 
     /** Add token to [tokens].
      *
-     * @param type TokenType
+     * @param type scanner.TokenType
      * @param literal Any? TODO
      */
     private fun addToken(type: TokenType, literal: Any? = null) {
@@ -114,7 +119,7 @@ class Scanner(private val source: String) {
 
         advance() // skip the ending quote
         val value = source.slice(start + 1 until current - 1)
-        addToken(STRING, value)
+        addToken(TokenType.STRING, value)
     }
 
     /** Consume simple-float and add as [Token].
@@ -131,7 +136,7 @@ class Scanner(private val source: String) {
             advance()
             while (peek().isDigit()) advance()
         }
-        addToken(NUMBER, source.slice(start until current).toDouble())
+        addToken(TokenType.NUMBER, source.slice(start until current).toDouble())
     }
 
     /** Consume identifier and add [Token] (keyword or generic IDENTIFIER). */
@@ -140,7 +145,7 @@ class Scanner(private val source: String) {
         while (isIdent(peek())) advance()
 
         val text = source.slice(start until current)
-        val type = keywordsToTokens[text] ?: IDENTIFIER
+        val type = keywordsToTokens[text] ?: TokenType.IDENTIFIER
         addToken(type)
     }
 
@@ -157,23 +162,23 @@ class Scanner(private val source: String) {
     private fun scanToken() {
         val c = advance()
         when (c) {
-            '(' -> addToken(LEFT_PAREN)
-            ')' -> addToken(RIGHT_PAREN)
-            '{' -> addToken(LEFT_BRACE)
-            '}' -> addToken(RIGHT_BRACE)
-            ',' -> addToken(COMMA)
-            '.' -> addToken(DOT)
-            '-' -> addToken(MINUS)
-            '+' -> addToken(PLUS)
-            ';' -> addToken(SEMICOLON)
-            '*' -> addToken(STAR)
-            '!' -> addToken(if (match('=')) BANG_EQUAL else BANG)
-            '=' -> addToken(if (match('=')) EQUAL_EQUAL else EQUAL)
-            '<' -> addToken(if (match('=')) LESS_EQUAL else LESS)
-            '>' -> addToken(if (match('=')) GREATER_EQUAL else GREATER)
+            '(' -> addToken(TokenType.LEFT_PAREN)
+            ')' -> addToken(TokenType.RIGHT_PAREN)
+            '{' -> addToken(TokenType.LEFT_BRACE)
+            '}' -> addToken(TokenType.RIGHT_BRACE)
+            ',' -> addToken(TokenType.COMMA)
+            '.' -> addToken(TokenType.DOT)
+            '-' -> addToken(TokenType.MINUS)
+            '+' -> addToken(TokenType.PLUS)
+            ';' -> addToken(TokenType.SEMICOLON)
+            '*' -> addToken(TokenType.STAR)
+            '!' -> addToken(if (match('=')) TokenType.BANG_EQUAL else TokenType.BANG)
+            '=' -> addToken(if (match('=')) TokenType.EQUAL_EQUAL else TokenType.EQUAL)
+            '<' -> addToken(if (match('=')) TokenType.LESS_EQUAL else TokenType.LESS)
+            '>' -> addToken(if (match('=')) TokenType.GREATER_EQUAL else TokenType.GREATER)
             '/' -> {
                 if (match('/')) while (peek() != '\n' && !isAtEnd) advance()
-                else addToken(SLASH)
+                else addToken(TokenType.SLASH)
             }
 
             '"' -> handleString()
@@ -195,7 +200,7 @@ class Scanner(private val source: String) {
             scanToken()
         }
 
-        tokens.add(Token(type = EOF, lexeme = "", literal = null, line = line))
+        tokens.add(Token(type = TokenType.EOF, lexeme = "", literal = null, line = line))
         return tokens
     }
 }

@@ -1,3 +1,11 @@
+package com.joelburton.mothlang
+
+import com.joelburton.mothlang.scanner.Scanner
+import com.joelburton.mothlang.scanner.Token
+import com.joelburton.mothlang.scanner.TokenType
+import com.joelburton.mothlang.parser.Parser
+import com.joelburton.mothlang.interpreter.Interpreter
+import com.joelburton.mothlang.resolver.Resolver
 import java.io.File
 import kotlin.system.exitProcess
 

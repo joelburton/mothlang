@@ -1,3 +1,7 @@
+package com.joelburton.mothlang.parser
+
+import com.joelburton.mothlang.scanner.Token
+
 /** Classes for all "expression" tokens.
  *
  * The language is, as many are, divided into expressions and statements.
@@ -9,23 +13,23 @@
  * they might accumulate a method for each of these, so each token class
  * would handle each of those actions. Instead, this code is oriented around
  * the [Visitor pattern](https://en.wikipedia.org/wiki/Visitor_pattern), which
- * "re-orients" the object-orientation so that one class (the [Interpreter]
- * or [Resolver] can gather together all the logic about that system in one
- * class, leaving the Parser classes simpler and focused only on their data.
+ * "re-orients" the object-orientation so that one class (the [interpreter.Interpreter]
+ * or [resolver.Resolver] can gather together all the logic about that system in one
+ * class, leaving the parser.Parser classes simpler and focused only on their data.
  * This also means they won't need to be touched if other layers of
  * post-parsing are added.
  *
  * It's not necessary that the subclasses of [Expr] are nested inside of it;
  * this just feels tidy. The [Expr] class is sealed, which may be useful for
- * code that needs to know that it handled every possible Expr type.
+ * code that needs to know that it handled every possible parser.Expr type.
  */
 
 sealed class Expr {
 
     /** The Visitor pattern requires an interface that gathers these methods.
      *
-     * These are the functions that a visiting client (like the Interpreter)
-     * needs to handle. As new Expr classes are added, this needs to be
+     * These are the functions that a visiting client (like the interpreter.Interpreter)
+     * needs to handle. As new parser.Expr classes are added, this needs to be
      * updated.
      *
      * In some implementations, these functions all have the same name, like
@@ -71,7 +75,7 @@ sealed class Expr {
         override fun <R> accept(v: Visitor<R>): R = v.visitCallExpr(this)
     }
 
-//     class Get(val obj: Expr?, val name: Token?) : Expr() {
+//     class Get(val obj: parser.Expr?, val name: com.joelburton.mothlang.scanner.Token?) : parser.Expr() {
 //        override fun <R> accept(v: Visitor<R>): R = v.visitGetExpr(this)
 //    }
 
@@ -94,16 +98,16 @@ sealed class Expr {
         override fun <R> accept(v: Visitor<R>): R = v.visitLogicalExpr(this)
     }
 
-//     class Set(val obj: Expr, val name: Token, val value: Expr) :
-//        Expr() {
+//     class Set(val obj: parser.Expr, val name: com.joelburton.mothlang.scanner.Token, val value: parser.Expr) :
+//        parser.Expr() {
 //        override fun <R> accept(v: Visitor<R>): R? = v?.visitSetExpr(this)
 //    }
 
-//     class Super(val keyword: Token, val method: Token) : Expr() {
+//     class Super(val keyword: com.joelburton.mothlang.scanner.Token, val method: com.joelburton.mothlang.scanner.Token) : parser.Expr() {
 //        override fun <R> accept(v: Visitor<R>): R? = v.visitSuperExpr(this)
 //    }
 
-//     class This(val keyword: Token?) : Expr() {
+//     class This(val keyword: com.joelburton.mothlang.scanner.Token?) : parser.Expr() {
 //        override fun <R> accept(v: Visitor<R>): R = v.visitThisExpr(this)
 //    }
 

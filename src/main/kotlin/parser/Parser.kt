@@ -1,5 +1,9 @@
-import Lox.Companion.loxError
-import TokenType.*
+package com.joelburton.mothlang.parser
+
+import com.joelburton.mothlang.scanner.Token
+import com.joelburton.mothlang.scanner.TokenType
+import com.joelburton.mothlang.scanner.TokenType.*
+import com.joelburton.mothlang.Lox.Companion.loxError
 
 class Parser(private val tokens: List<Token>) {
     private var current: Int = 0

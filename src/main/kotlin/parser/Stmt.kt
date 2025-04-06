@@ -1,9 +1,13 @@
+package com.joelburton.mothlang.parser
+
+import com.joelburton.mothlang.scanner.Token
+
 /** Ancestor for all "statement" classes.
  *
  * See the notes on [Expr] to understand this class and the Visitor pattern.
  */
 
-abstract class Stmt {
+sealed class Stmt {
 
     /** Visitor methods that clients must handle. */
     interface Visitor<R> {

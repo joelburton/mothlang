@@ -11,6 +11,9 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 
+group = "com.joelburton.mothlang"
+version = "1.0"
+
 
 tasks.test { useJUnitPlatform() }
 tasks.jar {

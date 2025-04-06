@@ -1,9 +1,17 @@
+package com.joelburton.mothlang.resolver
+
+import com.joelburton.mothlang.interpreter.Interpreter
+import com.joelburton.mothlang.parser.Stmt
+import com.joelburton.mothlang.parser.Expr
+import com.joelburton.mothlang.scanner.Token
+import com.joelburton.mothlang.Lox
+
 import java.util.Stack
 
 class Resolver(
     val interp: Interpreter,
 ) : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
-    
+
     private enum class FunctionType { NONE, FUNCTION }
 
     private val scopes: Stack<MutableMap<String, Boolean>> = Stack()

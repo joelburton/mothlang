@@ -1,4 +1,10 @@
-import TokenType.*
+package com.joelburton.mothlang.interpreter
+
+import com.joelburton.mothlang.parser.Expr
+import com.joelburton.mothlang.parser.Stmt
+import com.joelburton.mothlang.scanner.TokenType.*
+import com.joelburton.mothlang.scanner.Token
+import com.joelburton.mothlang.Lox
 
 class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
     open class RuntimeError(val token: Token, message: String) :

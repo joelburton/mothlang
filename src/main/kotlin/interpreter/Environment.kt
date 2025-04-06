@@ -1,8 +1,10 @@
-import Interpreter.RuntimeError
+package com.joelburton.mothlang.interpreter
+
+import com.joelburton.mothlang.scanner.Token
 
 class Environment(val enclosing: Environment? = null) {
     class UndefinedVarError(name: Token) :
-        RuntimeError(name, "Undefined variable '${name.lexeme}'")
+        Interpreter.RuntimeError(name, "Undefined variable '${name.lexeme}'")
 
     private val values: MutableMap<String, Any?> = mutableMapOf()
 
@@ -17,7 +19,10 @@ class Environment(val enclosing: Environment? = null) {
     fun assign(name: Token, value: Any?) {
         if (name.lexeme in values) values[name.lexeme] = value
         else if (enclosing != null) enclosing.assign(name, value)
-        else throw RuntimeError(name, "Undefined variable '${name.lexeme}'")
+        else throw Interpreter.RuntimeError(
+            name,
+            "Undefined variable '${name.lexeme}'"
+        )
     }
 
     fun getAt(distance: Int, name: String) =

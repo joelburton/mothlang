@@ -1,3 +1,5 @@
+import com.joelburton.mothlang.scanner.Scanner
+import com.joelburton.mothlang.scanner.Token
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.*
 
