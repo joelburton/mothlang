@@ -8,49 +8,38 @@ import org.jline.utils.AttributedString
 import org.jline.utils.AttributedStringBuilder
 import org.jline.utils.AttributedStyle.BLACK
 import org.jline.utils.AttributedStyle.BLUE
-import org.jline.utils.AttributedStyle.DEFAULT
+import org.jline.utils.AttributedStyle.DEFAULT as D
 import org.jline.utils.AttributedStyle.GREEN
 import org.jline.utils.AttributedStyle.YELLOW
 import java.util.regex.Pattern
 
-internal class LoxHighlighter : Highlighter {
+internal class LoxHighlighter(val syms: Set<String>) : Highlighter {
     var str = "(\".*?\")"
     val num = "([-+]?[0-9]*\\.?[0-9]+)"
-    val primitive = "(true|false|nil)"
-    val comment = "(//.*)"
-    val keywords = "(${keywordsToTokens.keys.joinToString("|")})"
-    val symbol = "(\\w+)"
+    val pr = "(true|false|nil)"
+    val com = "(//.*)"
+    val kw = "(${keywordsToTokens.keys.joinToString("|")})"
+    val sym = "(\\w+)"
     val ws = "(\\s+)"
     val rest = "(\\S+)"
-    val reAll =
-        "$str|$num|$primitive|$comment|$keywords|$symbol|$ws|$rest".toRegex()
+    val reAll = "$str|$num|$pr|$com|$kw|$sym|$ws|$rest".toRegex()
 
     override fun highlight(
         reader: LineReader, buffer: String
     ): AttributedString {
         val sb = AttributedStringBuilder()
         for (m in reAll.findAll(buffer)) {
-            if (m.groups[1] != null)
-                sb.append(m.groups[1]!!.value, DEFAULT.foreground(GREEN))
-            else if (m.groups[2] != null)
-                sb.append(m.groups[2]!!.value, DEFAULT.foreground(BLUE))
-            else if (m.groups[3] != null)
-                sb.append(m.groups[3]!!.value, DEFAULT.foreground(BLUE).bold())
-            else if (m.groups[4] != null)
-                sb.append(m.groups[4]!!.value, DEFAULT.foreground(BLACK))
-            else if (m.groups[5] != null) {
-                sb.append(m.groups[5]!!.value, DEFAULT.foreground(YELLOW))
-            } else if (m.groups[6] != null) {
-                val v = m.groups[6]!!.value
-                if (v in Lox.interpreter.globals.values.keys) {
-                    sb.append(v, DEFAULT.bold())
-                } else {
-                    sb.append(v, DEFAULT.underline())
-                }
-            }
-            else if (m.groups[7] != null)
-                sb.append(m.groups[7]!!.value, DEFAULT.foreground(YELLOW))
-            else sb.append(m.groups[8]!!.value)
+            val (str, num, pr, com, kw, sym, ws, rest) = m.destructured
+
+            if (str.isNotEmpty()) sb.append(str, D.foreground(GREEN))
+            else if (num.isNotEmpty()) sb.append(num, D.foreground(BLUE))
+            else if (pr.isNotEmpty()) sb.append(pr, D.foreground(BLUE).bold())
+            else if (com.isNotEmpty()) sb.append(com, D.foreground(BLACK))
+            else if (kw.isNotEmpty()) sb.append(kw, D.foreground(YELLOW))
+            else if (sym.isNotEmpty()) sb.append(
+                sym, if (sym in syms) D.bold() else D.underline())
+            else if (ws.isNotEmpty()) sb.append(ws)
+            else if (rest.isNotEmpty()) sb.append(rest)
         }
         return sb.toAttributedString()
     }

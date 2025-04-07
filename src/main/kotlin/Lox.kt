@@ -4,37 +4,16 @@ import com.joelburton.mothlang.Lox.Companion.hadError
 import com.joelburton.mothlang.Lox.Companion.hadRuntimeError
 import com.joelburton.mothlang.ast.AstExprPrinter
 import com.joelburton.mothlang.ast.AstStmtPrinter
-import com.joelburton.mothlang.cli.LoxHighlighter
+import com.joelburton.mothlang.cli.setupLineReader
 import com.joelburton.mothlang.interpreter.Interpreter
 import com.joelburton.mothlang.parser.Parser
 import com.joelburton.mothlang.resolver.Resolver
 import com.joelburton.mothlang.scanner.Scanner
 import com.joelburton.mothlang.scanner.Token
 import com.joelburton.mothlang.scanner.TokenType
-import com.joelburton.mothlang.scanner.keywordsToTokens
-import org.jline.reader.*
-import org.jline.reader.LineReader.*
-import org.jline.reader.impl.DefaultParser
-import org.jline.reader.impl.DefaultParser.Bracket
-import org.jline.terminal.Terminal
-import org.jline.terminal.TerminalBuilder
-import org.jline.utils.AttributedStringBuilder
-import org.jline.utils.AttributedStyle.DEFAULT
-import org.jline.utils.AttributedStyle.GREEN
-import org.jline.widget.AutosuggestionWidgets
+import org.jline.reader.EndOfFileException
 import java.io.File
 import kotlin.system.exitProcess
-
-internal class LoxCompleter(val words: Set<String>) : Completer {
-    override fun complete(
-        reader: LineReader,
-        line: ParsedLine,
-        candidates: MutableList<Candidate>
-    ) {
-        for (word in words) candidates.add(Candidate(word))
-        for (keyword in keywordsToTokens.keys) candidates.add(Candidate(keyword))
-    }
-}
 
 
 /** Core class for the language.
@@ -54,39 +33,14 @@ class Lox(
 
     /** Run REPL for language. */
     fun runPrompt() {
-        var home = System.getProperty("user.home")
-        val parser = DefaultParser()
-        val terminal: Terminal = TerminalBuilder.builder().dumb(true).build()
-
-        parser.setEofOnUnclosedBracket(Bracket.CURLY, Bracket.ROUND)
-        parser.lineCommentDelims(arrayOf("//"))
-
-        val prompt = AttributedStringBuilder()
-            .style(DEFAULT.foreground(GREEN))
-            .append("moth> ")
-            .style(DEFAULT)
-            .toAnsi(terminal)
-
-        val prompt2 = AttributedStringBuilder()
-            .style(DEFAULT.foreground(GREEN))
-            .append("..... ")
-            .style(DEFAULT)
-            .toAnsi(terminal)
-
-        val reader = LineReaderBuilder.builder()
-            .completer(LoxCompleter(interpreter.globals.values.keys))
-            .highlighter(LoxHighlighter())
-            .parser(parser)
-            .variable(HISTORY_FILE, "$home/.mothlang_history")
-            .variable(SECONDARY_PROMPT_PATTERN, prompt2)
-            .variable(INDENTATION, 4)
-            .option(Option.INSERT_BRACKET, true)
-            .terminal(terminal)
-            .build()
-        AutosuggestionWidgets(reader).enable()
+        val (reader, prompt) = setupLineReader()
 
         while (true) {
-            val line = reader.readLine(prompt) ?: break
+            val line = try {
+                reader.readLine(prompt)
+            } catch (_: EndOfFileException) {
+                break
+            }
             run(line)
             hadError = false
             hadRuntimeError = false
