@@ -5,7 +5,7 @@ import com.joelburton.mothlang.scanner.TokenType.*
 
 /** Maps language keywords to [TokenType]. */
 
-private val keywordsToTokens = mapOf(
+internal val keywordsToTokens = mapOf(
     "and" to AND,
     "class" to CLASS,
     "else" to ELSE,

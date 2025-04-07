@@ -10,6 +10,10 @@ repositories { mavenCentral() }
 dependencies {
     testImplementation(kotlin("test"))
     implementation("com.github.ajalt.clikt:clikt:5.0.3")
+    implementation("org.jline:jline-terminal:3.29.0")
+    implementation("org.jline:jline-reader:3.29.0")
+    implementation("org.jline:jline-console:3.29.0")
+
 }
 
 group = "com.joelburton.mothlang"

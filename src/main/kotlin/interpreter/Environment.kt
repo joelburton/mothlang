@@ -13,7 +13,7 @@ class Environment(val enclosing: Environment? = null) {
     class UndefinedVarError(name: Token) :
         Interpreter.RuntimeError(name, "Undefined variable '${name.lexeme}'")
 
-    private val values: MutableMap<String, Any?> = mutableMapOf()
+    internal val values: MutableMap<String, Any?> = mutableMapOf()
 
     /** Return ancestor environment [distance] up (0 is current environ) */
     private fun ancestor(distance: Int): Environment? {

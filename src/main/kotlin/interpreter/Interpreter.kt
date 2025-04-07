@@ -24,7 +24,7 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
     class Return(val value: Any?) : RuntimeException(null, null, false, false)
 
     /** The global environment, which holds top-level vars and functions. */
-    private var globals = Environment().also {
+    internal var globals = Environment().also {
         it["clock"] = ClockFn
         it["input"] = InputFn
         it["stringToNum"] = StringToNumFn
