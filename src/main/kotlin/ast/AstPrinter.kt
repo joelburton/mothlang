@@ -34,6 +34,9 @@ open class AstExprPrinter : Expr.Visitor<String> {
         return "($callee (${args}))"
     }
 
+    override fun visitGetExpr(expr: Expr.Get) =
+        parenthesize(".${expr.name.lexeme}", expr.obj)
+
     override fun visitGroupingExpr(expr: Expr.Grouping) =
         parenthesize("", expr.expression)
 
@@ -49,6 +52,14 @@ open class AstExprPrinter : Expr.Visitor<String> {
         val right = expr.right.accept(this)
         return "($left ${expr.operator.lexeme} $right)"
     }
+
+    override fun visitSetExpr(expr: Expr.Set) =
+        parenthesize("= ${expr.name.lexeme}", expr.obj)
+
+    override fun visitSuperExpr(expr: Expr.Super) =
+        "super.${expr.method.lexeme}"
+
+    override fun visitThisExpr(expr: Expr.This) = "this"
 
     override fun visitUnaryExpr(expr: Expr.Unary) =
         parenthesize(expr.operator.lexeme, expr.right)
@@ -81,6 +92,11 @@ class AstStmtPrinter : AstExprPrinter(), Stmt.Visitor<String> {
     override fun visitBlockStmt(stmt: Stmt.Block): String {
         return "{\n${stmt.statements
             .joinToString(separator = "\n") { it?.accept(this) ?: "" }}\n}"
+    }
+
+    override fun visitClassStmt(stmt: Stmt.Class): String {
+        return "class ${stmt.name.lexeme} {\n" +
+        stmt.methods.joinToString(separator = "\n") { it.accept(this) } + "\n}"
     }
 
     override fun visitIfStmt(stmt: Stmt.If): String {

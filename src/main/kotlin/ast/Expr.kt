@@ -48,10 +48,10 @@ sealed class Expr {
         fun visitLogicalExpr(expr: Logical): R
         fun visitUnaryExpr(expr: Unary): R
         fun visitVariableExpr(expr: Variable): R
-//        fun visitGetExpr(expr: Get): R
-//        fun visitSetExpr(expr: Set): R
-//        fun visitSuperExpr(expr: Super): R
-//        fun visitThisExpr(expr: This): R
+        fun visitGetExpr(expr: Get): R
+        fun visitSetExpr(expr: Set): R
+        fun visitSuperExpr(expr: Super): R
+        fun visitThisExpr(expr: This): R
     }
 
     /** An assignment: "a = 2" */
@@ -77,9 +77,9 @@ sealed class Expr {
         override fun <R> accept(v: Visitor<R>): R = v.visitCallExpr(this)
     }
 
-//     class Get(val obj: parser.Expr?, val name: com.joelburton.mothlang.scanner.Token?) : parser.Expr() {
-//        override fun <R> accept(v: Visitor<R>): R = v.visitGetExpr(this)
-//    }
+     class Get(val obj: Expr, val name: Token) : Expr() {
+        override fun <R> accept(v: Visitor<R>): R = v.visitGetExpr(this)
+    }
 
     /** Parenthesis-grouping, like `( 1 + 2)` */
     class Grouping(val expression: Expr) : Expr() {
@@ -100,18 +100,19 @@ sealed class Expr {
         override fun <R> accept(v: Visitor<R>): R = v.visitLogicalExpr(this)
     }
 
-//     class Set(val obj: parser.Expr, val name: com.joelburton.mothlang.scanner.Token, val value: parser.Expr) :
-//        parser.Expr() {
-//        override fun <R> accept(v: Visitor<R>): R? = v?.visitSetExpr(this)
-//    }
+    /** Set property on an instance: `auden.color = "gray"` */
+     class Set(val obj: Expr, val name: Token, val value: Expr) : Expr() {
+        override fun <R> accept(v: Visitor<R>): R = v.visitSetExpr(this)
+    }
 
-//     class Super(val keyword: com.joelburton.mothlang.scanner.Token, val method: com.joelburton.mothlang.scanner.Token) : parser.Expr() {
-//        override fun <R> accept(v: Visitor<R>): R? = v.visitSuperExpr(this)
-//    }
+     class Super(val keyword: Token, val method: Token) : Expr() {
+        override fun <R> accept(v: Visitor<R>): R = v.visitSuperExpr(this)
+    }
 
-//     class This(val keyword: com.joelburton.mothlang.scanner.Token?) : parser.Expr() {
-//        override fun <R> accept(v: Visitor<R>): R = v.visitThisExpr(this)
-//    }
+    /** Refer to enclosing scope of obj instance: `this.color` */
+     class This(val keyword: Token) : Expr() {
+        override fun <R> accept(v: Visitor<R>): R = v.visitThisExpr(this)
+    }
 
     /** A unary expression: `-1` or `-foo` */
     class Unary(val operator: Token, val right: Expr) : Expr() {

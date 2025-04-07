@@ -38,8 +38,7 @@ class Environment(val enclosing: Environment? = null) {
         else if (enclosing != null) enclosing.assign(name, value)
         else throw Interpreter.RuntimeError(
             name,
-            "Undefined variable '${name.lexeme}'"
-        )
+            "Undefined variable '${name.lexeme}'")
     }
 
     /** Get value directly from ancestor [distance] up from here. */

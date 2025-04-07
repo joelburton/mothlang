@@ -18,7 +18,9 @@ import com.joelburton.mothlang.scanner.Token
  * null ("nil") is returned.
  */
 class UserDefFunction(
-    val declaration: Stmt.Function, val closure: Environment,
+    val declaration: Stmt.Function,
+    val closure: Environment,
+    val isInitializer: Boolean = false
 ) : ILoxCallable {
 
     override val arity: Int = declaration.params.size
@@ -32,9 +34,17 @@ class UserDefFunction(
         try {
             interp.executeBlock(declaration.body, environment)
         } catch (rv: Return) {
+            if (isInitializer) return closure.getAt(0, "this")
             return rv.value
         }
+        if (isInitializer) return closure.getAt(0, "this")
         return null
+    }
+
+    fun bind(instance: LoxInstance): UserDefFunction {
+        val environ = Environment(closure)
+        environ["this"] = instance
+        return UserDefFunction(declaration, environ, isInitializer)
     }
 
     override fun toString(): String = "<fn ${declaration.name.lexeme}>"

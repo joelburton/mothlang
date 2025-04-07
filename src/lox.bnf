@@ -4,8 +4,10 @@ program        ::= declaration* EOF ;
 // statements
 declaration    ::= funDecl
                   | varDecl
+                  | classDecl
                   | statement ;
 varDecl        ::= "var" IDENTIFIER ( "=" expression )? ";" ;
+classDecl      ::= "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
 funDecl        ::= "fun" function ;
 function       ::= IDENTIFIER "(" parameters? ")" block ;
 parameters     ::= IDENTIFIER ( "," IDENTIFIER )* ;
@@ -28,7 +30,7 @@ block          ::= "{" declaration* "}" ;
 
 // expressions
 expression     ::= assignment ;
-assignment     ::= IDENTIFIER "=" assignment
+assignment     ::= ( call "." )? IDENTIFIER "=" assignment
                   | logic_or ;
 logic_or       ::= logic_and ( "or" logic_and )* ;
 logic_and      ::= equality ( "and" equality )* ;
@@ -38,8 +40,10 @@ term           ::= factor ( ( "-" | "+" ) factor )* ;
 factor         ::= unary ( ( "/" | "*" ) unary )* ;
 unary          ::= ( "!" | "-" ) unary
                    | call ;
-call           ::= primary ( "(" arguments? ")" )* ;
+call           ::= primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 arguments      ::= expression ( "," expression )* ;
 primary        ::= NUMBER | STRING | "true" | "false" | "nil"
                    | "(" expression ")"
-                   | IDENTIFIER ;
+                   | IDENTIFIER
+                   | "super" "." IDENTIFIER
+                   ;

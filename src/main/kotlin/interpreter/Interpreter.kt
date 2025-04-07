@@ -29,6 +29,7 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         it["input"] = InputFn
         it["stringToNum"] = StringToNumFn
         it["randomNum"] = RandomNumFn
+        it["numToString"] = NumToStringFn
     }
 
     /** Mapping of an expression to the environment-depth.
@@ -202,6 +203,12 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         return callee.call(this, arguments, expr.paren)
     }
 
+    override fun visitGetExpr(expr: Expr.Get): Any? {
+        val obj = evaluate(expr.obj)
+        if (obj is LoxInstance) return obj.get(expr.name)
+        throw RuntimeError(expr.name, "Only instances have properties.")
+    }
+
     override fun visitGroupingExpr(expr: Expr.Grouping) = evaluate(expr.expression)
 
     override fun visitLiteralExpr(expr: Expr.Literal) = expr.value
@@ -214,6 +221,15 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
             if (!isTruthy(left)) return left
         }
         return evaluate(expr.right)
+    }
+
+    override fun visitSetExpr(expr: Expr.Set): Any? {
+        val obj = evaluate(expr.obj)
+        if (obj !is LoxInstance)
+            throw RuntimeError(expr.name, "Only instances have fields.")
+        val value = evaluate(expr.value)
+        obj.set(expr.name, value)
+        return value
     }
 
     override fun visitUnaryExpr(expr: Expr.Unary): Any? {
@@ -233,6 +249,42 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
 
     override fun visitBlockStmt(stmt: Stmt.Block) {
         executeBlock(stmt.statements, Environment(environment))
+    }
+
+    override fun visitClassStmt(stmt: Stmt.Class) {
+        var superclass: Any? = null
+        if (stmt.superclass != null) {
+            superclass = evaluate(stmt.superclass)
+            if (superclass !is LoxClass) {
+                throw RuntimeError(
+                    stmt.superclass.name,
+                    "Superclass must be a class."
+                )
+            }
+        }
+        superclass as LoxClass?
+
+        environment[stmt.name.lexeme] = null
+
+        if (stmt.superclass != null) {
+            environment = Environment(environment)
+            environment["super"] = superclass
+        }
+
+        val methods = mutableMapOf<String, UserDefFunction>()
+        for (method in stmt.methods) {
+            val function = UserDefFunction(
+                method,
+                environment,
+                isInitializer = method.name.lexeme == "init")
+            methods.put(method.name.lexeme, function)
+        }
+
+        val klass = LoxClass(stmt.name.lexeme, superclass, methods)
+
+        if (superclass != null) environment = environment.enclosing!!
+
+        environment.assign(stmt.name, klass)
     }
 
     override fun visitExpressionStmt(expr: Stmt.Expression) {
@@ -259,6 +311,23 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         // not an error---this is caught so a "return" can leap up as many
         // blocks as needed to get to the function call
         throw Return(value)
+    }
+
+    override fun visitSuperExpr(expr: Expr.Super): Any? {
+        val distance = locals.get(expr) as Int
+        val superclass = environment.getAt(distance, "super") as LoxClass
+        val obj = environment.getAt(distance - 1, "this") as LoxInstance
+        val method = superclass.findMethod(expr.method.lexeme)
+
+        if (method == null)
+            throw RuntimeError(
+                expr.method, "Undefined property '${expr.method.lexeme}'.")
+
+        return method.bind(obj)
+    }
+
+    override fun visitThisExpr(expr: Expr.This): Any? {
+        return lookUpVar(expr.keyword, expr)
     }
 
     override fun visitVarStmt(stmt: Stmt.Var) {

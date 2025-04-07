@@ -42,7 +42,8 @@ class Resolver(
     val interp: Interpreter,
 ) : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
 
-    private enum class FunctionType { NONE, FUNCTION }
+    private enum class FunctionType { NONE, FUNCTION, METHOD, INITALIZER }
+    private enum class ClassType { NONE, CLASS, SUBCLASS }
 
     /** Stack of scopes; each is Map of var-name to is-defined-here?
      *
@@ -58,11 +59,13 @@ class Resolver(
      *
      * Note that the "global scope" isn't really a scope --- functions that
      * look for the scope of a global will get null.
-      */
+     */
     private val scopes: Stack<MutableMap<String, Boolean>> = Stack()
 
     /** Mutable tracker of "what kind of function are we in?" */
     private var currentFunction = FunctionType.NONE
+
+    private var currentClassType = ClassType.NONE
 
     /** Double-dispatcher for expressions. */
     private fun resolve(expr: Expr) {
@@ -132,7 +135,7 @@ class Resolver(
     /** Mark a newly-declared variable as in this scope.
      *
      * This also prevents a variable from being redeclared in the same scope.
-      */
+     */
     private fun declare(name: Token) {
         if (scopes.empty()) return
         val scope = scopes.peek()
@@ -165,8 +168,57 @@ class Resolver(
         for (arg in expr.arguments) resolve(arg)
     }
 
+    override fun visitClassStmt(stmt: Stmt.Class) {
+        val enclosingClass = currentClassType
+        currentClassType = ClassType.CLASS
+
+        declare(stmt.name)
+        define(stmt.name)
+
+        if (stmt.superclass != null && stmt.superclass.name.lexeme == stmt.name.lexeme) {
+            Lox.loxError(
+                stmt.superclass.name, "A class can't inherit from itself")
+        }
+
+        if (stmt.superclass != null) {
+            currentClassType = ClassType.SUBCLASS
+            resolve(stmt.superclass)
+        }
+
+        if (stmt.superclass != null) {
+            beginScope()
+            scopes.peek()["super"] = true
+        }
+
+        beginScope()
+        scopes.peek().put("this", false)
+
+        for (method in stmt.methods) {
+            val declaration = if (method.name.lexeme == "init")
+                FunctionType.INITALIZER
+            else
+                FunctionType.METHOD
+            resolveFunction(method, declaration)
+        }
+
+        endScope()
+
+        if (stmt.superclass != null) endScope()
+
+        currentClassType = enclosingClass
+    }
+
+    override fun visitGetExpr(expr: Expr.Get) {
+        resolve(expr.obj)
+    }
+
     override fun visitGroupingExpr(expr: Expr.Grouping) {
         resolve(expr.expression)
+    }
+
+    override fun visitSetExpr(expr: Expr.Set) {
+        resolve(expr.value)
+        resolve(expr.obj)
     }
 
     override fun visitLiteralExpr(expr: Expr.Literal) {
@@ -178,6 +230,24 @@ class Resolver(
         resolve(expr.right)
     }
 
+    override fun visitSuperExpr(expr: Expr.Super) {
+        if (currentClassType == ClassType.NONE) {
+            Lox.loxError(expr.keyword, "Can't use 'super' outside of a class.")
+        } else if (currentClassType != ClassType.SUBCLASS) {
+            Lox.loxError(expr.keyword,
+                "Can't use 'super' in a class with no superclass.")
+        }
+        resolveLocal(expr, expr.keyword)
+    }
+
+    override fun visitThisExpr(expr: Expr.This) {
+        if (currentClassType == ClassType.NONE) {
+            Lox.loxError(expr.keyword, "Can't use 'this' outside of a class.")
+            return
+        }
+        resolveLocal(expr, expr.keyword)
+    }
+
     override fun visitUnaryExpr(expr: Expr.Unary) {
         resolve(expr.right)
     }
@@ -187,7 +257,8 @@ class Resolver(
             // prevent "var a = a;"
             Lox.loxError(
                 expr.name,
-                "Can't read local variable in its own initializer.")
+                "Can't read local variable in its own initializer."
+            )
         }
         resolveLocal(expr, expr.name)
     }
@@ -223,7 +294,12 @@ class Resolver(
     override fun visitReturnStmt(stmt: Stmt.Return) {
         if (currentFunction == FunctionType.NONE)
             Lox.loxError(stmt.keyword, "Can't return from top-level code.")
-        if (stmt.value != null) resolve(stmt.value)
+        if (stmt.value != null) {
+            if (currentFunction == FunctionType.INITALIZER)
+                Lox.loxError(
+                    stmt.keyword, "Can't return a value from an initializer.")
+            resolve(stmt.value)
+        }
     }
 
     override fun visitVarStmt(stmt: Stmt.Var) {

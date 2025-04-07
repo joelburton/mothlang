@@ -82,14 +82,16 @@ class Parser(private val tokens: List<Token>) {
 
     // ================== statements
 
-    /** 
+    /**
      * declaration    ::= varDecl
      *                   | funDecl
+     *                   | classDecl
      *                   | statement ;
      */
     private fun declaration(): Stmt? {
         return try {
             if (match(FUN)) function("function")
+            else if (match(CLASS)) classDeclaration()
             else if (match(VAR)) varDeclaration()
             else statement()
         } catch (_: ParseError) {
@@ -121,6 +123,26 @@ class Parser(private val tokens: List<Token>) {
         consume(LEFT_BRACE, "Expect '{' before $kind body")
         val body = block()
         return Stmt.Function(name, parameters, body)
+    }
+
+    /**
+     * classDecl ::= "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
+     */
+    private fun classDeclaration(): Stmt.Class {
+        val name = consume(IDENTIFIER, "Expect class name.")
+
+        val superclass = if (match(LESS)) {
+            consume(IDENTIFIER, "Expect superclass name.")
+            Expr.Variable(prevTok)
+        } else {
+            null
+        }
+        
+        consume(LEFT_BRACE, "Expect '{' before class body.")
+        val methods = mutableListOf<Stmt.Function>()
+        while (!check(RIGHT_BRACE) && !isAtEnd) methods.add(function("method"))
+        consume(RIGHT_BRACE, "Expect '}' after class body.")
+        return Stmt.Class(name, superclass, methods)
     }
 
     /**
@@ -273,6 +295,9 @@ class Parser(private val tokens: List<Token>) {
             if (expr is Expr.Variable) {
                 return Expr.Assign(expr.name, value)
             }
+            else if (expr is Expr.Get) {
+                return Expr.Set(expr.obj, expr.name, value)
+            }
             error(equals, "Invalid assignment target.")
         }
         return expr
@@ -379,6 +404,10 @@ class Parser(private val tokens: List<Token>) {
         var expr = primary()
         while (true) {
             if (match(LEFT_PAREN)) expr = finishCall(expr)
+            else if (match(DOT)) {
+                val name = consume(IDENTIFIER, "Expect property name after '.'.")
+                expr = Expr.Get(expr, name)
+            }
             else break
         }
         return expr
@@ -401,9 +430,11 @@ class Parser(private val tokens: List<Token>) {
     }
 
     /**
-     * primary        ::= NUMBER | STRING | "true" | "false" | "nil"
-     *                    | "(" expression ")"
-     *                    | IDENTIFIER ;
+    * primary        ::= NUMBER | STRING | "true" | "false" | "nil"
+    *                   | "(" expression ")"
+    *                   | IDENTIFIER
+    *                   | "super" "." IDENTIFIER
+    *                   ;
      */
     private fun primary(): Expr {
         return when {
@@ -416,11 +447,16 @@ class Parser(private val tokens: List<Token>) {
                 consume(RIGHT_PAREN, "Expect ')' after expression.")
                 Expr.Grouping(expr)
             }
-
+            match(SUPER) -> {
+                val keyword = prevTok
+                consume(DOT, "Expect '.' after 'super'.")
+                val method = consume(IDENTIFIER, "Expect superclass method name.")
+                Expr.Super(keyword, method)
+            }
+            match(THIS) -> Expr.This(prevTok)
             match(IDENTIFIER) -> Expr.Variable(prevTok)
 
-            else -> //throw ParseError("Unexpected token: $currTok")
-                    throw error(currTok, "Unexpected token.")
+            else -> throw error(currTok, "Unexpected token.")
         }
     }
 

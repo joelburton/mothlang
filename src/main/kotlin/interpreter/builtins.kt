@@ -51,6 +51,23 @@ object StringToNumFn : ILoxCallable {
     }
 }
 
+/** numToString(num) -> returns string of number. */
+
+object NumToStringFn : ILoxCallable {
+    override val arity: Int = 1
+    override fun call(
+        interp: Interpreter,
+        arguments: List<Any?>,
+        name: Token,
+    ): Any? {
+        val argument =
+            arguments[0] as? Double ?: throw Interpreter.RuntimeError(
+                name, "Argument 'num' must be a number"
+            )
+        return argument.toString().removeSuffix(".0")
+    }
+}
+
 /** randomNum(1, 10) -> random integer (Double) between 1 and 10, inclusive. */
 
 object RandomNumFn : ILoxCallable {

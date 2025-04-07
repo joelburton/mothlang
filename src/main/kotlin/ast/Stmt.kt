@@ -18,6 +18,7 @@ sealed class Stmt {
         fun visitIfStmt(stmt: If): R
         fun visitWhileStmt(stmt: While): R
         fun visitFunctionStmt(stmt: Function): R
+        fun visitClassStmt(stmt: Class): R
         fun visitReturnStmt(stmt: Return): R
     }
 
@@ -62,6 +63,15 @@ sealed class Stmt {
     ) : Stmt() {
         override fun <R> accept(v: Visitor<R>): R =
             v.visitFunctionStmt(this)
+    }
+
+    /** Class definition: `class Cat { }` */
+    class Class(
+        val name: Token,
+        val superclass: Expr.Variable?,
+        val methods: List<Function>
+    ) : Stmt() {
+        override fun <R> accept(v: Visitor<R>): R = v.visitClassStmt(this)
     }
 
     /** Return statement: `return 42;` or `return;` */
